@@ -16,6 +16,13 @@ seneca.use('..',{ pattern: function( req ) {
 }})
 
 
+
+seneca.act('role:dispatch,cmd:add,item:proxy',{id:'aaa',host:'localhost',port:8090})
+seneca.act('role:dispatch,cmd:add,item:route',{pattern:{url:'/aaa/echo',domain:'localhost'},server:'aaa'})
+
+
+
+
 var web = seneca.export('web')
 
 http.createServer(function (req, res) {

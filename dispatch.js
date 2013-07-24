@@ -56,23 +56,26 @@ module.exports = function( options ) {
 
 
   seneca.add({init:name}, function( args, done ){
-    this.act('role:dispatch,cmd:add,item:proxy',{id:'aaa',host:'localhost',port:3001})
-    this.act('role:dispatch,cmd:add,item:proxy',{id:'bbb',host:'localhost',port:3002})
+    //this.act('role:dispatch,cmd:add,item:proxy',{id:'aaa',host:'localhost',port:3001})
+    //this.act('role:dispatch,cmd:add,item:proxy',{id:'bbb',host:'localhost',port:3002})
 
-    this.act('role:dispatch,cmd:add,item:route',{pattern:{url:'/foo',domain:'localhost'},server:'aaa'})
-    this.act('role:dispatch,cmd:add,item:route',{pattern:{url:'/bar',domain:'localhost'},server:'bbb'})
+    //this.act('role:dispatch,cmd:add,item:route',{pattern:{url:'/foo',domain:'localhost'},server:'aaa'})
+    //this.act('role:dispatch,cmd:add,item:route',{pattern:{url:'/bar',domain:'localhost'},server:'bbb'})
   })
 
 
 
   seneca.act('role:web',{use:function(req,res,next){
     var rd = options.pattern( req )
+    console.dir(rd)
 
     var id = router.find( rd )
-    if(!id) return next();
+    console.log('id='+id)
+    if(!id) return next(404);
 
     var proxy = proxymap[id]
-    if(!proxy) return next();
+    console.log('p='+proxy)
+    if(!proxy) return next(404);
 
     proxy.proxyRequest(req, res)
   }})
