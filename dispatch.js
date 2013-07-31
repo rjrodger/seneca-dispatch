@@ -24,43 +24,69 @@ module.exports = function( options ) {
   var proxymap = {} 
 
 
+  var serverent = seneca.make('farm','server')
+  var routeent  = seneca.make('farm','route')
 
-  seneca.add({role:name,cmd:'add',item:'proxy'},add_proxy)
+
+  seneca.add({role:name,cmd:'add',item:'server'},add_server)
   seneca.add({role:name,cmd:'add',item:'route'},add_route)
 
 
 
-  function add_proxy( args, done ) {
-    var server = {
-      id:   args.id,
+  function add_server( args, done ) {
+    serverent.make$({
+      id$:   args.id,
       host: args.host,
       port: args.port
-    }
 
-    proxymap[server.id] = new httpproxy.HttpProxy({
-      target: {
-        host: server.host,
-        port: server.port
-      }
+    }).save$(function( err, server ){
+      if(err) return done(err);
+
+      proxymap[server.id] = new httpproxy.HttpProxy({
+        target: {
+          host: server.host,
+          port: server.port
+        }
+      })
+      
+      done()
     })
-
-    done(null,server)
   }
 
 
   
-  function add_route( args, done ) {
-    router.add(args.pattern,args.server)
-    done()
+  function add_route( args, done ){
+    routeent.make$({
+      id$:JSON.stringify(args.pattern),
+      server:args.server
+
+    }).save$( function( err, route ){
+      router.add(args.pattern,args.server)
+      done()
+    })
   }
 
 
   seneca.add({init:name}, function( args, done ){
-    //this.act('role:dispatch,cmd:add,item:proxy',{id:'aaa',host:'localhost',port:3001})
-    //this.act('role:dispatch,cmd:add,item:proxy',{id:'bbb',host:'localhost',port:3002})
+    seneca.act('role:util, cmd:define_sys_entity', {list:[serverent.canon$(),routeent.canon$()]})
 
-    //this.act('role:dispatch,cmd:add,item:route',{pattern:{url:'/foo',domain:'localhost'},server:'aaa'})
-    //this.act('role:dispatch,cmd:add,item:route',{pattern:{url:'/bar',domain:'localhost'},server:'bbb'})
+    serverent.list$( function( err, all ){
+      if(err) return done(err);
+
+      _.each( all, function( server ){
+        seneca.act({role:name,cmd:'add',item:'server',id:server.id,host:server.host,port:server.port})
+      })
+
+      routeent.list$( function( err, all ){
+        if(err) return done(err);
+
+        _.each( all, function( route ){
+          seneca.act({role:name,cmd:'add',item:'route',pattern:JSON.parse(route.id),server:route.server})
+        })
+
+        done()
+      })
+    })
   })
 
 
